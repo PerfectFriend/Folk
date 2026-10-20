@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/banner.jpg" alt="Folk Anecdotes & Radio Banner" width="100%" style="border-radius: 12px; box-shadow: 0 8px 32px rgba(0, 240, 255, 0.25);">
+  <img src="./docs/images/banner.jpg" alt="Folk Anecdotes & Radio Banner" width="100%">
 </p>
 
 <h1 align="center">🌌 Folk Anecdotes & Radio | Кибер-Фольклор</h1>
@@ -196,7 +196,7 @@ gradle assembleDebug
 ---
 
 <p align="center">
-  <img src="docs/images/footer.jpg" alt="Footer Cyber-Gaudí Van Gogh Radio" width="100%" style="border-radius: 12px; box-shadow: 0 8px 32px rgba(217, 70, 239, 0.25);">
+  <img src="./docs/images/footer.jpg" alt="Footer Cyber-Gaudí Van Gogh Radio" width="100%">
 </p>
 
 <p align="center">
