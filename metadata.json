@@ -1,0 +1,6 @@
+{
+  "name": "Folk Anecdotes & Radio",
+  "description": "Folk anecdotes storyteller with live internet radio and automated X.com news digests with matched cultural jokes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
