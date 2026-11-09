@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['selectedCulture', 'selectedLanguage'])
+        && data.selectedCulture is string && data.selectedCulture.size() > 0 && data.selectedCulture.size() <= 100
+        && data.selectedLanguage is string && data.selectedLanguage.size() > 0 && data.selectedLanguage.size() <= 50
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 150))
+        && (!('email' in data) || (data.email is string && data.email.size() <= 200));
+    }
+
+    function isValidSavedJoke(data) {
+      return data.keys().hasAll(['jokeText', 'culture'])
+        && data.jokeText is string && data.jokeText.size() > 0 && data.jokeText.size() <= 10000
+        && data.culture is string && data.culture.size() > 0 && data.culture.size() <= 100
+        && (!('authorName' in data) || (data.authorName is string && data.authorName.size() <= 150));
+    }
+
+    function isValidChatMessage(data) {
+      return data.keys().hasAll(['sender', 'text', 'culture'])
+        && data.sender in ['user', 'akyn']
+        && data.text is string && data.text.size() > 0 && data.text.size() <= 10000
+        && data.culture is string && data.culture.size() > 0 && data.culture.size() <= 100;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow delete: if isOwner(userId);
+
+      match /saved_jokes/{jokeId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidSavedJoke(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /chat_history/{messageId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidChatMessage(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

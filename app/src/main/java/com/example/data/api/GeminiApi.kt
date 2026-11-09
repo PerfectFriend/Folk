@@ -9,6 +9,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
+import retrofit2.http.Path
 import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
 
@@ -16,12 +17,19 @@ import java.util.concurrent.TimeUnit
 data class GenerateContentRequest(
     val contents: List<Content>,
     val generationConfig: GenerationConfig? = null,
-    val systemInstruction: Content? = null
+    val systemInstruction: Content? = null,
+    val tools: List<Tool>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class Tool(
+    val googleSearch: Map<String, String>? = null
 )
 
 @JsonClass(generateAdapter = true)
 data class Content(
-    val parts: List<Part>
+    val parts: List<Part>,
+    val role: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -42,11 +50,36 @@ data class GenerateContentResponse(
 
 @JsonClass(generateAdapter = true)
 data class Candidate(
-    val content: Content? = null
+    val content: Content? = null,
+    val groundingMetadata: GroundingMetadata? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class GroundingMetadata(
+    val webSearchQueries: List<String>? = null,
+    val searchChunks: List<SearchChunk>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SearchChunk(
+    val web: WebSource? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class WebSource(
+    val uri: String? = null,
+    val title: String? = null
 )
 
 interface GeminiApiService {
-    @POST("v1beta/models/gemini-3.5-flash:generateContent")
+    @POST("v1beta/models/{model}:generateContent")
+    suspend fun generateContentWithModel(
+        @Path("model") model: String,
+        @Query("key") apiKey: String,
+        @Body request: GenerateContentRequest
+    ): GenerateContentResponse
+
+    @POST("v1beta/models/gemini-3.8-flash:generateContent")
     suspend fun generateContent(
         @Query("key") apiKey: String,
         @Body request: GenerateContentRequest

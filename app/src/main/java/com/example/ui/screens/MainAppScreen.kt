@@ -1,12 +1,17 @@
 package com.example.ui.screens
 
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.speech.RecognizerIntent
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -61,7 +66,10 @@ import com.example.R
 import com.example.data.database.NewsDigest
 import com.example.data.database.RadioStation
 import com.example.data.database.SavedJoke
+import com.example.data.FallbackData
 import com.example.ui.viewmodel.AppViewModel
+import com.example.ui.components.RadioPlayer
+import com.example.ui.components.DailyCulturalAnecdoteCard
 import com.example.ui.utils.Loc
 import kotlinx.coroutines.delay
 
@@ -78,6 +86,11 @@ fun MainAppScreen(
     var currentTab by remember { mutableStateOf(0) }
     var showLanguageMenu by remember { mutableStateOf(false) }
     var showStyleDialog by remember { mutableStateOf(false) }
+    var showChatbotDialog by remember { mutableStateOf(false) }
+    var showLiveVoiceDialog by remember { mutableStateOf(false) }
+    var showProfileDialog by remember { mutableStateOf(false) }
+
+    val currentUser by viewModel.currentUser.collectAsState()
 
     val languagesList = listOf(
         "English" to "🇬🇧",
@@ -99,11 +112,120 @@ fun MainAppScreen(
         Loc.get("tab_saved", activeLanguage)
     )
 
+    if (showProfileDialog) {
+        val user = currentUser
+        AlertDialog(
+            onDismissRequest = { showProfileDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "Profile",
+                        tint = Color(0xFF4285F4),
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (activeLanguage == "Russian" || activeLanguage == "Русский") "Google Профиль" else "Google Profile",
+                        color = Color(0xFFFFD700),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = user?.displayName ?: "Пользователь Google",
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (!user?.email.isNullOrBlank()) {
+                        Text(
+                            text = user.email ?: "",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 14.sp
+                        )
+                    }
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CloudDone,
+                            contentDescription = "Synced",
+                            tint = Color(0xFF00FFCC),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (activeLanguage == "Russian" || activeLanguage == "Русский")
+                                "Облачная база Firestore: Активна"
+                            else
+                                "Cloud Firestore Sync: Active",
+                            color = Color(0xFF00FFCC),
+                            fontSize = 13.sp
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = "Akyn Gemini",
+                            tint = Color(0xFFFFD700),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (activeLanguage == "Russian" || activeLanguage == "Русский")
+                                "Весёлый Акын поёт для вас персонально!"
+                            else
+                                "Merry Akyn is singing personalized stories for you!",
+                            color = Color(0xFFFFD700),
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.signOut()
+                        showProfileDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB00020))
+                ) {
+                    Text(if (activeLanguage == "Russian" || activeLanguage == "Русский") "Выйти" else "Sign out")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showProfileDialog = false }) {
+                    Text(if (activeLanguage == "Russian" || activeLanguage == "Русский") "Закрыть" else "Close", color = Color.White)
+                }
+            },
+            containerColor = Color(0xFF1E1035),
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
     if (showStyleDialog) {
         StyleSettingsDialog(
             viewModel = viewModel,
             lang = activeLanguage,
             onDismiss = { showStyleDialog = false }
+        )
+    }
+
+    if (showChatbotDialog) {
+        GeminiChatbotDialog(
+            viewModel = viewModel,
+            lang = activeLanguage,
+            onDismiss = { showChatbotDialog = false }
+        )
+    }
+
+    if (showLiveVoiceDialog) {
+        LiveVoiceConversationDialog(
+            viewModel = viewModel,
+            lang = activeLanguage,
+            onDismiss = { showLiveVoiceDialog = false }
         )
     }
 
@@ -138,6 +260,84 @@ fun MainAppScreen(
                     }
                 },
                 actions = {
+                    // Google Auth Profile / Sign-In Button
+                    val user = currentUser
+                    if (user != null) {
+                        IconButton(
+                            onClick = { showProfileDialog = true },
+                            modifier = Modifier.testTag("user_profile_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Profile: ${user.displayName}",
+                                tint = Color(0xFF4285F4)
+                            )
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                val activity = context as? Activity
+                                if (activity != null) {
+                                    viewModel.signInWithGoogle(
+                                        activity = activity,
+                                        onSuccess = {
+                                            Toast.makeText(context, "Google вход успешен!", Toast.LENGTH_SHORT).show()
+                                        },
+                                        onError = { err ->
+                                            Toast.makeText(context, "Вход: $err", Toast.LENGTH_LONG).show()
+                                        }
+                                    )
+                                }
+                            },
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .testTag("google_sign_in_button"),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4285F4),
+                                contentColor = Color.White
+                            ),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Login,
+                                    contentDescription = "Sign in with Google",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = if (activeLanguage == "Russian" || activeLanguage == "Русский") "Войти" else "Sign In",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    // Live Voice conversation button (gemini-3.8-live)
+                    IconButton(
+                        onClick = { showLiveVoiceDialog = true },
+                        modifier = Modifier.testTag("open_live_voice_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.GraphicEq,
+                            contentDescription = "Live Voice Conversation (gemini-3.8-live)",
+                            tint = Color(0xFF00FFCC)
+                        )
+                    }
+
+                    // Gemini Chatbot button (gemini-4-argon / 3.8-flash / 3.1-lite)
+                    IconButton(
+                        onClick = { showChatbotDialog = true },
+                        modifier = Modifier.testTag("open_gemini_chat_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.QuestionAnswer,
+                            contentDescription = "Gemini Elder Chatbot",
+                            tint = Color(0xFFFFD700)
+                        )
+                    }
+
                     IconButton(
                         onClick = { showStyleDialog = true },
                         modifier = Modifier.testTag("style_switch_button")
@@ -235,20 +435,31 @@ fun MainAppScreen(
 
             // Main content tabs
             when (currentTab) {
-                0 -> StorytellerTab(viewModel, activeLanguage)
+                0 -> StorytellerTab(
+                    viewModel = viewModel,
+                    lang = activeLanguage,
+                    onOpenChatbot = { showChatbotDialog = true },
+                    onOpenLiveVoice = { showLiveVoiceDialog = true }
+                )
                 1 -> NewsTrendsTab(viewModel, activeLanguage)
                 2 -> RadioTab(viewModel, activeLanguage)
-                3 -> FavoritesTab(viewModel, activeLanguage)
+                3 -> FavoritesTab(viewModel, activeLanguage, onNavigateTab = { currentTab = it })
             }
 
-            // Persistent Bottom Media Player above navigation bar
+            // Persistent Bottom Media Player and TTS Narrator Bar above navigation bar
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
-                PersistentBottomMediaPlayer(viewModel, activeLanguage)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    TtsNarratorFloatingBar(viewModel, activeLanguage)
+                    RadioPlayer(viewModel = viewModel, lang = activeLanguage)
+                }
             }
         }
     }
@@ -256,7 +467,12 @@ fun MainAppScreen(
 }
 
 @Composable
-fun StorytellerTab(viewModel: AppViewModel, lang: String) {
+fun StorytellerTab(
+    viewModel: AppViewModel,
+    lang: String,
+    onOpenChatbot: () -> Unit = {},
+    onOpenLiveVoice: () -> Unit = {}
+) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -267,6 +483,17 @@ fun StorytellerTab(viewModel: AppViewModel, lang: String) {
     val activeCulture by viewModel.storytellerCulture.collectAsState()
     val situation by viewModel.storytellerSituation.collectAsState()
     val apiError by viewModel.storytellerError.collectAsState()
+
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!spoken.isNullOrBlank()) {
+                viewModel.setStorytellerSituation(spoken)
+            }
+        }
+    }
 
     val cultures = listOf(
         "Jewish" to "✡️",
@@ -339,6 +566,146 @@ fun StorytellerTab(viewModel: AppViewModel, lang: String) {
             }
         }
 
+        // Daily Cultural Folk Anecdote Card with Regional Swiping
+        item {
+            DailyCulturalAnecdoteCard(
+                viewModel = viewModel,
+                lang = lang,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        // Interactive Gemini AI Elder Hub: Live Voice & Multi-Turn Chat
+        item {
+            val isRussian = lang == "Russian" || lang == "Русский"
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Live Voice Card
+                Card(
+                    onClick = onOpenLiveVoice,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("storyteller_open_live_voice_card"),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF130A24)
+                    ),
+                    border = BorderStroke(1.dp, Color(0xFF00FFCC).copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0x3300FFCC),
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.GraphicEq,
+                                        contentDescription = null,
+                                        tint = Color(0xFF00FFCC),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = Color(0x3300FFCC)
+                            ) {
+                                Text(
+                                    text = "gemini-3.8-live",
+                                    color = Color(0xFF00FFCC),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (isRussian) "Живая Беседа" else "Live Voice",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = if (isRussian) "Речь без задержки" else "Low-latency voice",
+                            color = Color(0xFF00FFCC),
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+
+                // Chatbot Card
+                Card(
+                    onClick = onOpenChatbot,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("storyteller_open_chatbot_card"),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF1E1035)
+                    ),
+                    border = BorderStroke(1.dp, Color(0xFFFFD700).copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0x33FFD700),
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.QuestionAnswer,
+                                        contentDescription = null,
+                                        tint = Color(0xFFFFD700),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = Color(0x33FFD700)
+                            ) {
+                                Text(
+                                    text = "3 Models + Search",
+                                    color = Color(0xFFFFD700),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (isRussian) "Чат со Старцем" else "Elder Chatbot",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = if (isRussian) "Argon, Flash, Lite" else "Argon, Flash, Lite",
+                            color = Color(0xFFFFD700),
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+            }
+        }
+
         // Culture selector title
         item {
             Text(
@@ -405,6 +772,48 @@ fun StorytellerTab(viewModel: AppViewModel, lang: String) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("situation_input_field"),
+                trailingIcon = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (situation.isNotBlank()) {
+                            IconButton(
+                                onClick = { viewModel.setStorytellerSituation("") },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear",
+                                    tint = Color.White.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = {
+                                try {
+                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, viewModel.ttsManager.getLocaleForLanguage(lang).toLanguageTag())
+                                        putExtra(RecognizerIntent.EXTRA_PROMPT, Loc.get("voice_input_prompt", lang))
+                                    }
+                                    speechLauncher.launch(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Voice input not available", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .testTag("voice_input_mic_btn")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = "Voice Input",
+                                tint = Color(0xFFFFD700),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+                },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
@@ -417,6 +826,49 @@ fun StorytellerTab(viewModel: AppViewModel, lang: String) {
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() })
             )
+        }
+
+        // Quick Situation Suggestion Chips
+        item {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = Loc.get("quick_prompts_title", lang),
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val quickSuggestions = Loc.getQuickSituations(lang)
+                    items(quickSuggestions) { prompt ->
+                        val isSelected = situation.trim().equals(prompt, ignoreCase = true)
+                        SuggestionChip(
+                            onClick = {
+                                if (isSelected) viewModel.setStorytellerSituation("")
+                                else viewModel.setStorytellerSituation(prompt)
+                            },
+                            label = {
+                                Text(
+                                    text = prompt,
+                                    fontSize = 11.sp,
+                                    color = if (isSelected) Color(0xFF1E1035) else Color.White
+                                )
+                            },
+                            colors = SuggestionChipDefaults.suggestionChipColors(
+                                containerColor = if (isSelected) Color(0xFFFFD700) else Color.White.copy(alpha = 0.06f)
+                            ),
+                            border = SuggestionChipDefaults.suggestionChipBorder(
+                                enabled = true,
+                                borderColor = if (isSelected) Color(0xFFFFD700) else Color.White.copy(alpha = 0.12f)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
+            }
         }
 
         // Tell Jokes Button
@@ -496,7 +948,188 @@ fun StorytellerTab(viewModel: AppViewModel, lang: String) {
             // Introduction speech bubble
             if (intro.isNotBlank()) {
                 item {
-                    StorytellerSpeechBubble(text = intro, title = Loc.get("storyteller_says", lang))
+                    StorytellerSpeechBubble(
+                        text = intro,
+                        title = Loc.get("storyteller_says", lang),
+                        id = "storyteller_intro",
+                        viewModel = viewModel,
+                        lang = lang
+                    )
+                }
+            }
+
+            // Storyteller Audio Master Panel (TTS)
+            if (jokes.isNotEmpty()) {
+                item {
+                    StorytellerAudioMasterPanel(viewModel = viewModel, lang = lang)
+                }
+            } else {
+                // When no jokes are generated yet, display Campfire Wisdom Spotlight
+                item {
+                    val isRussian = lang == "Russian" || lang == "Русский"
+                    val fallbackJokes = FallbackData.getFallbackJokes(activeCulture, isRussian)
+                    val spotlightIdx by viewModel.spotlightJokeIndex.collectAsState()
+                    val activeSpotlight = if (fallbackJokes.isNotEmpty()) fallbackJokes[spotlightIdx % fallbackJokes.size] else ""
+                    val ttsSpeaking by viewModel.ttsSpeaking.collectAsState()
+                    val ttsCurrentId by viewModel.ttsCurrentSpokenId.collectAsState()
+                    val isPlayingThis = ttsSpeaking && ttsCurrentId == "spotlight_joke"
+                    var isSaved by remember { mutableStateOf(false) }
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .testTag("spotlight_wisdom_card"),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF1B0E2E).copy(alpha = 0.95f)
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                        border = BorderStroke(
+                            1.5.dp,
+                            Brush.horizontalGradient(
+                                listOf(Color(0xFFFFD700), Color(0xFFFF8C00), Color(0xFFFFD700))
+                            )
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(18.dp)) {
+                            // Header badge and culture
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .background(Color(0xFFFFD700).copy(alpha = 0.2f), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(text = "🔥", fontSize = 14.sp)
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = Loc.get("spotlight_badge", lang),
+                                            color = Color(0xFFFFD700),
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 14.sp
+                                        )
+                                        Text(
+                                            text = Loc.getCultureName(activeCulture, lang) + " • " + Loc.get("spotlight_subtitle", lang),
+                                            color = Color.White.copy(alpha = 0.6f),
+                                            fontSize = 10.sp
+                                        )
+                                    }
+                                }
+
+                                // Shuffle / Next story button
+                                IconButton(
+                                    onClick = {
+                                        viewModel.nextSpotlightJoke(fallbackJokes.size)
+                                        isSaved = false
+                                    },
+                                    modifier = Modifier.size(32.dp).testTag("next_spotlight_btn")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "Shuffle",
+                                        tint = Color(0xFFFFD700),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // Joke / Wisdom Text
+                            Text(
+                                text = activeSpotlight,
+                                color = Color.White,
+                                fontSize = 15.sp,
+                                lineHeight = 22.sp,
+                                fontStyle = FontStyle.Normal
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Action buttons row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Button(
+                                    onClick = {
+                                        viewModel.playSpotlightJoke(activeSpotlight, activeCulture)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isPlayingThis) Color(0xFF00FFCC) else Color(0xFFFFD700),
+                                        contentColor = Color(0xFF140727)
+                                    ),
+                                    shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                    modifier = Modifier.testTag("listen_spotlight_btn")
+                                ) {
+                                    Icon(
+                                        imageVector = if (isPlayingThis) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                        contentDescription = "Play",
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = Loc.get("listen_elder_btn", lang),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    // Save to TOP
+                                    IconButton(
+                                        onClick = {
+                                            viewModel.toggleSaveJoke(activeSpotlight, activeCulture, "Campfire Wisdom")
+                                            isSaved = !isSaved
+                                            Toast.makeText(
+                                                context,
+                                                if (isSaved) Loc.get("added_favorites", lang) else Loc.get("removed_favorites", lang),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        },
+                                        modifier = Modifier.size(36.dp).testTag("save_spotlight_btn")
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isSaved) Icons.Filled.Star else Icons.Outlined.Star,
+                                            contentDescription = "Save",
+                                            tint = if (isSaved) Color(0xFFFFD700) else Color.White.copy(alpha = 0.5f),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+
+                                    // Share
+                                    IconButton(
+                                        onClick = {
+                                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                                type = "text/plain"
+                                                putExtra(Intent.EXTRA_SUBJECT, "Folklore Wisdom")
+                                                putExtra(Intent.EXTRA_TEXT, activeSpotlight)
+                                            }
+                                            context.startActivity(Intent.createChooser(intent, "Share Wisdom"))
+                                        },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Share,
+                                            contentDescription = "Share",
+                                            tint = Color.White.copy(alpha = 0.5f),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -515,7 +1148,13 @@ fun StorytellerTab(viewModel: AppViewModel, lang: String) {
             // Outro speech bubble
             if (outro.isNotBlank()) {
                 item {
-                    StorytellerSpeechBubble(text = outro, title = Loc.get("parting_words", lang))
+                    StorytellerSpeechBubble(
+                        text = outro,
+                        title = Loc.get("parting_words", lang),
+                        id = "storyteller_outro",
+                        viewModel = viewModel,
+                        lang = lang
+                    )
                 }
             }
         }
@@ -528,23 +1167,59 @@ fun StorytellerTab(viewModel: AppViewModel, lang: String) {
 }
 
 @Composable
-fun StorytellerSpeechBubble(text: String, title: String) {
+fun StorytellerSpeechBubble(
+    text: String,
+    title: String,
+    id: String? = null,
+    viewModel: AppViewModel? = null,
+    lang: String = "English"
+) {
+    val ttsSpeaking = viewModel?.ttsSpeaking?.collectAsState()?.value ?: false
+    val currentId = viewModel?.ttsCurrentSpokenId?.collectAsState()?.value
+    val isSpeakingThis = id != null && currentId == id && ttsSpeaking
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1035)),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSpeakingThis) Color(0xFF2C1654) else Color(0xFF1E1035)
+        ),
         shape = RoundedCornerShape(16.dp, 16.dp, 16.dp, 2.dp),
-        border = BoxBorderDefaults(Color(0xFFFFD700).copy(alpha = 0.2f))
+        border = if (isSpeakingThis) BorderStroke(2.dp, Color(0xFFFFD700)) else BoxBorderDefaults(Color(0xFFFFD700).copy(alpha = 0.2f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = title,
-                color = Color(0xFFFFD700),
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                modifier = Modifier.padding(bottom = 6.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    color = Color(0xFFFFD700),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp
+                )
+                if (viewModel != null && id != null) {
+                    IconButton(
+                        onClick = {
+                            if (id == "storyteller_intro") viewModel.toggleTtsIntro()
+                            else viewModel.toggleTtsOutro()
+                        },
+                        modifier = Modifier
+                            .size(28.dp)
+                            .testTag("tts_bubble_$id")
+                    ) {
+                        Icon(
+                            imageVector = if (isSpeakingThis) Icons.Default.GraphicEq else Icons.AutoMirrored.Filled.VolumeUp,
+                            contentDescription = if (isSpeakingThis) Loc.get("tts_stop", lang) else Loc.get("tts_listen", lang),
+                            tint = if (isSpeakingThis) Color(0xFFFFD700) else Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = text,
                 color = Color.White,
@@ -568,6 +1243,10 @@ fun JokeCard(
     val context = LocalContext.current
     var isSaved by remember { mutableStateOf(false) }
 
+    val ttsSpeaking by viewModel.ttsSpeaking.collectAsState()
+    val currentSpokenId by viewModel.ttsCurrentSpokenId.collectAsState()
+    val isSpeakingThis = (currentSpokenId == "joke_$index") && ttsSpeaking
+
     LaunchedEffect(text) {
         viewModel.isJokeSavedState(text) { saved ->
             isSaved = saved
@@ -579,8 +1258,11 @@ fun JokeCard(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .testTag("joke_card_$index"),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-        shape = RoundedCornerShape(16.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSpeakingThis) Color(0xFFFFD700).copy(alpha = 0.12f) else Color.White.copy(alpha = 0.05f)
+        ),
+        shape = RoundedCornerShape(16.dp),
+        border = if (isSpeakingThis) BorderStroke(2.dp, Color(0xFFFFD700)) else null
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -611,7 +1293,19 @@ fun JokeCard(
                     )
                 }
 
-                Row {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // TTS Listen / Stop action
+                    IconButton(
+                        onClick = { viewModel.toggleTtsJoke(index, text) },
+                        modifier = Modifier.testTag("tts_button_$index")
+                    ) {
+                        Icon(
+                            imageVector = if (isSpeakingThis) Icons.Default.GraphicEq else Icons.AutoMirrored.Filled.VolumeUp,
+                            contentDescription = if (isSpeakingThis) Loc.get("tts_stop", lang) else Loc.get("tts_listen", lang),
+                            tint = if (isSpeakingThis) Color(0xFFFFD700) else Color.White.copy(alpha = 0.7f)
+                        )
+                    }
+
                     // Copy action
                     IconButton(
                         onClick = {
@@ -673,6 +1367,438 @@ fun JokeCard(
 }
 
 @Composable
+fun StorytellerAudioMasterPanel(viewModel: AppViewModel, lang: String) {
+    val ttsSpeaking by viewModel.ttsSpeaking.collectAsState()
+    val ttsPaused by viewModel.ttsPaused.collectAsState()
+    val ttsCurrentTitle by viewModel.ttsCurrentTitle.collectAsState()
+    val speechRate by viewModel.ttsSpeechRate.collectAsState()
+    val voicePreset by viewModel.ttsVoicePreset.collectAsState()
+    val playlistIndex by viewModel.ttsPlaylistIndex.collectAsState()
+    val playlist by viewModel.ttsPlaylist.collectAsState()
+
+    val isSessionRunning = playlist.isNotEmpty() && (ttsSpeaking || ttsPaused)
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .testTag("storyteller_audio_master_panel"),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1B0E2E).copy(alpha = 0.95f)
+        ),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(
+            1.5.dp,
+            Brush.horizontalGradient(
+                listOf(Color(0xFFFFD700), Color(0xFFFF8C00), Color(0xFF00F0FF))
+            )
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Header with Storyteller title & status indicator
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.RecordVoiceOver,
+                        contentDescription = "TTS Voice",
+                        tint = Color(0xFFFFD700),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = Loc.get("storyteller_tts_header", lang),
+                        color = Color(0xFFFFD700),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Speed Pill Button
+                Surface(
+                    onClick = { viewModel.cycleTtsRate() },
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, Color(0xFFFFD700).copy(alpha = 0.3f)),
+                    modifier = Modifier.testTag("tts_speed_toggle")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Speed,
+                            contentDescription = "Speed",
+                            tint = Color(0xFFFFD700),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${speechRate}x",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Voice Preset selection chips
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val presets = listOf(
+                    Triple("elder", "👴 " + Loc.get("tts_voice_elder", lang), "0.85x"),
+                    Triple("classic", "🎙️ " + Loc.get("tts_voice_classic", lang), "1.0x"),
+                    Triple("cheerful", "🎭 " + Loc.get("tts_voice_cheerful", lang), "1.1x")
+                )
+                presets.forEach { (presetKey, presetLabel, _) ->
+                    val isSelected = voicePreset == presetKey
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { viewModel.setTtsVoicePreset(presetKey) },
+                        label = {
+                            Text(
+                                text = presetLabel,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) Color(0xFF1E1035) else Color.White
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFFFFD700),
+                            containerColor = Color.White.copy(alpha = 0.06f)
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            selectedBorderColor = Color(0xFFFFD700),
+                            borderColor = Color.White.copy(alpha = 0.15f)
+                        ),
+                        modifier = Modifier.testTag("tts_preset_$presetKey")
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Main playback action or controller
+            if (!isSessionRunning) {
+                Button(
+                    onClick = { viewModel.startFullStorytellerSession() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("start_tts_session_btn"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFD700),
+                        contentColor = Color(0xFF1E1035)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Campaign, contentDescription = "Play all")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = Loc.get("tts_narrate_all", lang),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            } else {
+                // Active session controller box
+                Surface(
+                    color = Color.White.copy(alpha = 0.05f),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, Color(0xFFFFD700).copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = ttsCurrentTitle ?: "Озвучивание сказителя...",
+                                    color = Color(0xFFFFD700),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = if (playlist.isNotEmpty() && playlistIndex in playlist.indices) {
+                                        "Шаг ${playlistIndex + 1} из ${playlist.size}"
+                                    } else {
+                                        "В эфире"
+                                    },
+                                    color = Color.White.copy(alpha = 0.6f),
+                                    fontSize = 11.sp
+                                )
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Previous
+                                IconButton(
+                                    onClick = { viewModel.prevTts() },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.SkipPrevious,
+                                        contentDescription = "Previous",
+                                        tint = Color.White
+                                    )
+                                }
+                                // Play / Pause
+                                IconButton(
+                                    onClick = {
+                                        if (ttsSpeaking) viewModel.pauseTts() else viewModel.resumeTts()
+                                    },
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(Color(0xFFFFD700), CircleShape)
+                                ) {
+                                    Icon(
+                                        imageVector = if (ttsSpeaking) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                        contentDescription = if (ttsSpeaking) "Pause" else "Play",
+                                        tint = Color(0xFF1E1035),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                // Next
+                                IconButton(
+                                    onClick = { viewModel.nextTts() },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.SkipNext,
+                                        contentDescription = "Next",
+                                        tint = Color.White
+                                    )
+                                }
+                                // Stop
+                                IconButton(
+                                    onClick = { viewModel.stopTts() },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Stop",
+                                        tint = Color.Red.copy(alpha = 0.8f)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Linear progress indicator
+                        if (playlist.isNotEmpty()) {
+                            val progress = ((playlistIndex + 1).toFloat() / playlist.size.toFloat()).coerceIn(0f, 1f)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                                    .clip(RoundedCornerShape(2.dp)),
+                                color = Color(0xFFFFD700),
+                                trackColor = Color.White.copy(alpha = 0.1f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Cozy Campfire Ambience (Procedural Audio)
+            val isCampfireOn by viewModel.isCampfirePlaying.collectAsState()
+
+            Surface(
+                color = if (isCampfireOn) Color(0xFFFF8C00).copy(alpha = 0.15f) else Color.White.copy(alpha = 0.04f),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, if (isCampfireOn) Color(0xFFFF8C00) else Color.White.copy(alpha = 0.1f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = Loc.get("campfire_ambience", lang),
+                        color = if (isCampfireOn) Color(0xFFFFD700) else Color.White.copy(alpha = 0.8f),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Switch(
+                        checked = isCampfireOn,
+                        onCheckedChange = { viewModel.toggleCampfire() },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color(0xFF1E1035),
+                            checkedTrackColor = Color(0xFFFF8C00),
+                            uncheckedThumbColor = Color.White.copy(alpha = 0.6f),
+                            uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
+                        ),
+                        modifier = Modifier
+                            .scale(0.8f)
+                            .testTag("campfire_ambience_switch")
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TtsNarratorFloatingBar(viewModel: AppViewModel, lang: String) {
+    val ttsSpeaking by viewModel.ttsSpeaking.collectAsState()
+    val ttsPaused by viewModel.ttsPaused.collectAsState()
+    val currentTitle by viewModel.ttsCurrentTitle.collectAsState()
+    val speechRate by viewModel.ttsSpeechRate.collectAsState()
+    val playlist by viewModel.ttsPlaylist.collectAsState()
+    val playlistIndex by viewModel.ttsPlaylistIndex.collectAsState()
+
+    val isActive = ttsSpeaking || ttsPaused
+    if (!isActive) return
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("tts_narrator_floating_bar"),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1F0D3D).copy(alpha = 0.96f)
+        ),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(
+            1.5.dp,
+            Brush.horizontalGradient(
+                listOf(Color(0xFFFFD700), Color(0xFF00F0FF))
+            )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                // Pulsing voice icon
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .background(Color(0xFFFFD700).copy(alpha = 0.15f), CircleShape)
+                        .border(1.dp, Color(0xFFFFD700).copy(alpha = 0.4f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (ttsSpeaking) Icons.Default.GraphicEq else Icons.Default.RecordVoiceOver,
+                        contentDescription = "Voice",
+                        tint = Color(0xFFFFD700),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = currentTitle ?: Loc.get("tts_reading", lang),
+                        color = Color(0xFFFFD700),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = if (playlist.isNotEmpty() && playlistIndex in playlist.indices) {
+                            "Сказитель (${playlistIndex + 1}/${playlist.size}) • ${speechRate}x"
+                        } else {
+                            "Озвучивание анекдота • ${speechRate}x"
+                        },
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 11.sp
+                    )
+                }
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (playlist.isNotEmpty()) {
+                    IconButton(
+                        onClick = { viewModel.prevTts() },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SkipPrevious,
+                            contentDescription = "Prev",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                IconButton(
+                    onClick = {
+                        if (ttsSpeaking) viewModel.pauseTts() else viewModel.resumeTts()
+                    },
+                    modifier = Modifier
+                        .size(34.dp)
+                        .background(Color(0xFFFFD700), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = if (ttsSpeaking) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (ttsSpeaking) "Pause" else "Play",
+                        tint = Color(0xFF1E1035),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                if (playlist.isNotEmpty()) {
+                    IconButton(
+                        onClick = { viewModel.nextTts() },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SkipNext,
+                            contentDescription = "Next",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                IconButton(
+                    onClick = { viewModel.stopTts() },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun NewsTrendsTab(viewModel: AppViewModel, lang: String) {
     val loading by viewModel.newsLoading.collectAsState()
     val digests by viewModel.newsDigests.collectAsState()
@@ -723,7 +1849,7 @@ fun NewsTrendsTab(viewModel: AppViewModel, lang: String) {
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Simulated X.com Monitoring Header Card
+        // Trends Monitoring Header Card
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1035).copy(alpha = 0.4f)),
@@ -733,50 +1859,139 @@ fun NewsTrendsTab(viewModel: AppViewModel, lang: String) {
                     .padding(top = 16.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Pulsing Online Signal
-                    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-                    val alphaScale by infiniteTransition.animateFloat(
-                        initialValue = 0.3f,
-                        targetValue = 1.0f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(durationMillis = 1000, easing = LinearEasing),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "alpha"
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .scale(alphaScale)
-                            .background(Color(0xFF00FFCC), CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = Loc.get("monitoring_x_header", lang),
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Pulsing Online Signal
+                        val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+                        val alphaScale by infiniteTransition.animateFloat(
+                            initialValue = 0.3f,
+                            targetValue = 1.0f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(durationMillis = 1000, easing = LinearEasing),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "alpha"
                         )
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .scale(alphaScale)
+                                .background(Color(0xFF00FFCC), CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = Loc.get("monitoring_x_header", lang),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = Loc.get("monitoring_x_subheader", lang),
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontSize = 11.sp
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = Color(0x3300FFCC),
+                                modifier = Modifier.padding(top = 3.dp)
+                            ) {
+                                Text(
+                                    text = "⚡ Google Search Grounding • gemini-3.8-flash",
+                                    color = Color(0xFF00FFCC),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Play Trends Briefing Button
+                    Button(
+                        onClick = { viewModel.playAllTrendsDigests() },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00FFCC),
+                            contentColor = Color(0xFF140727)
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier.testTag("play_trends_briefing_btn")
+                    ) {
+                        Icon(imageVector = Icons.Default.Campaign, contentDescription = "Play Briefing", modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = Loc.get("monitoring_x_subheader", lang),
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontSize = 11.sp
+                            text = Loc.get("play_trends_briefing", lang),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
         }
 
-        // X Accounts Integration Panel
+        // AlphaSignalAI Topics Quick Selector
+        item {
+            val selectedTopic by viewModel.selectedTrendTopic.collectAsState()
+            val topics = Loc.getTrendTopics(lang)
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = Loc.get("trend_topics_title", lang),
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(topics) { (topicLabel, topicQuery) ->
+                        val isSelected = selectedTopic == topicQuery
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                viewModel.selectTrendTopic(if (isSelected) null else topicQuery)
+                            },
+                            label = {
+                                Text(
+                                    text = topicLabel,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) Color(0xFF1E1035) else Color.White
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFFFFD700),
+                                containerColor = Color.White.copy(alpha = 0.05f)
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
+                                selectedBorderColor = Color(0xFFFFD700),
+                                borderColor = Color.White.copy(alpha = 0.12f)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Trends Sources & Channels Integration Panel
         item {
             val monitoredAccounts by viewModel.monitoredAccounts.collectAsState()
             val selectedAccounts by viewModel.selectedAccounts.collectAsState()
             var newAccountHandle by remember { mutableStateOf("") }
-            val defaultAccounts = listOf("@NASA", "@TechCrunch", "@Reuters", "@folklore", "@OdessaHumor")
+            val defaultAccounts = listOf("@AlphaSignalAI", "@TechCrunch", "@Reuters", "@NASA", "@folklore")
 
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.03f)),
@@ -1347,7 +2562,7 @@ fun NewsDigestCard(
                             }
                             IconButton(
                                 onClick = {
-                                    viewModel.toggleSaveJoke(digest.attachedJoke, digest.attachedJokeCulture, "X.com News Digest")
+                                    viewModel.toggleSaveJoke(digest.attachedJoke, digest.attachedJokeCulture, "Trends Digest")
                                     isSaved = !isSaved
                                     Toast.makeText(
                                         context,
@@ -1453,7 +2668,7 @@ fun NewsDigestCard(
                     onClick = {
                         val intent = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, "X.com Trend: ${digest.title}\n\n${digest.content}")
+                            putExtra(Intent.EXTRA_TEXT, "${digest.title}\n\n${digest.content}")
                         }
                         context.startActivity(Intent.createChooser(intent, "Share Trend"))
                     },
@@ -1477,6 +2692,7 @@ fun RadioTab(viewModel: AppViewModel, lang: String) {
     val playingStation by viewModel.selectedStation.collectAsState()
     val isPlaying by viewModel.isRadioPlaying.collectAsState()
     val isLoading by viewModel.isRadioLoading.collectAsState()
+    val volume by viewModel.radioVolume.collectAsState()
 
     var showCreator by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
@@ -1675,36 +2891,151 @@ fun RadioTab(viewModel: AppViewModel, lang: String) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Buttons
+                    // Media Control Bar with Play/Pause, Station Navigation & Stop
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("radio_tab_media_control_bar"),
+                        horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(
-                            onClick = { viewModel.toggleRadio() },
+                            onClick = { viewModel.playPreviousStation() },
                             modifier = Modifier
-                                .size(48.dp)
-                                .background(Color(0xFFFFD700), CircleShape)
+                                .size(44.dp)
+                                .background(Color.White.copy(alpha = 0.08f), CircleShape)
+                                .testTag("radio_tab_prev_button")
                         ) {
                             Icon(
-                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = "PlayPause",
-                                tint = Color(0xFF1E1035)
+                                imageVector = Icons.Default.SkipPrevious,
+                                contentDescription = Loc.get("prev_station", lang),
+                                tint = Color.White
                             )
                         }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        IconButton(
+                            onClick = { viewModel.toggleRadio() },
+                            modifier = Modifier
+                                .size(56.dp)
+                                .background(
+                                    Brush.linearGradient(listOf(Color(0xFFFFD700), Color(0xFFFF9E00))),
+                                    CircleShape
+                                )
+                                .testTag("radio_tab_play_pause_button")
+                        ) {
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    color = Color(0xFF1E1035),
+                                    strokeWidth = 2.5.dp,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                    contentDescription = if (isPlaying) "Pause" else "Play",
+                                    tint = Color(0xFF1E1035),
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        IconButton(
+                            onClick = { viewModel.playNextStation() },
+                            modifier = Modifier
+                                .size(44.dp)
+                                .background(Color.White.copy(alpha = 0.08f), CircleShape)
+                                .testTag("radio_tab_next_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SkipNext,
+                                contentDescription = Loc.get("next_station", lang),
+                                tint = Color.White
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
 
                         IconButton(
                             onClick = { viewModel.stopRadio() },
                             modifier = Modifier
-                                .size(48.dp)
-                                .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                                .size(44.dp)
+                                .background(Color.White.copy(alpha = 0.08f), CircleShape)
+                                .testTag("radio_tab_stop_button")
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Stop,
                                 contentDescription = "Stop",
-                                tint = Color.White
+                                tint = Color.White.copy(alpha = 0.7f)
                             )
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Volume Control Slider Row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                            .testTag("radio_tab_volume_bar"),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = { viewModel.toggleRadioMute() },
+                            modifier = Modifier
+                                .size(32.dp)
+                                .testTag("radio_tab_mute_button")
+                        ) {
+                            val volIcon = when {
+                                volume <= 0.01f -> Icons.AutoMirrored.Filled.VolumeOff
+                                volume < 0.5f -> Icons.AutoMirrored.Filled.VolumeDown
+                                else -> Icons.AutoMirrored.Filled.VolumeUp
+                            }
+                            Icon(
+                                imageVector = volIcon,
+                                contentDescription = "Toggle Mute",
+                                tint = if (volume > 0.01f) Color(0xFFFFD700) else Color.White.copy(alpha = 0.4f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        Text(
+                            text = Loc.get("volume_title", lang),
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+
+                        Slider(
+                            value = volume,
+                            onValueChange = { viewModel.setRadioVolume(it) },
+                            valueRange = 0f..1f,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(26.dp)
+                                .testTag("radio_tab_volume_slider"),
+                            colors = SliderDefaults.colors(
+                                thumbColor = Color(0xFFFFD700),
+                                activeTrackColor = Color(0xFFFFD700),
+                                inactiveTrackColor = Color.White.copy(alpha = 0.2f)
+                            )
+                        )
+
+                        Text(
+                            text = "${(volume * 100).toInt()}%",
+                            color = Color(0xFFFFD700),
+                            fontSize = 10.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.width(36.dp),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.End
+                        )
                     }
                 }
             }
@@ -1888,10 +3219,17 @@ fun RadioTab(viewModel: AppViewModel, lang: String) {
 }
 
 @Composable
-fun FavoritesTab(viewModel: AppViewModel, lang: String) {
+fun FavoritesTab(
+    viewModel: AppViewModel,
+    lang: String,
+    onNavigateTab: ((Int) -> Unit)? = null
+) {
     val savedJokes by viewModel.savedJokes.collectAsState()
     val radioStations by viewModel.radioStations.collectAsState()
     val favoritedStations = radioStations.filter { it.isFavorite }
+    val ttsSpeaking by viewModel.ttsSpeaking.collectAsState()
+    val ttsCurrentId by viewModel.ttsCurrentSpokenId.collectAsState()
+    val selectedCultureFilter by viewModel.selectedTopCulture.collectAsState()
 
     LazyColumn(
         modifier = Modifier
@@ -1899,25 +3237,147 @@ fun FavoritesTab(viewModel: AppViewModel, lang: String) {
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // TOP Header Hero Card
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+                    .testTag("top_hero_header_card"),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF140727).copy(alpha = 0.95f),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(20.dp),
+                border = BorderStroke(1.dp, Color(0xFFFFD700).copy(alpha = 0.4f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(Color(0xFFFFD700), Color(0xFFFF8C00))
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "TOP",
+                            tint = Color(0xFF140727),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (lang == "Russian" || lang == "Русский") "Золотой ТОП" else "Golden TOP",
+                            color = Color(0xFFFFD700),
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 18.sp
+                        )
+                        Text(
+                            text = if (lang == "Russian" || lang == "Русский")
+                                "Избранные анекдоты (${savedJokes.size}) • Станции (${favoritedStations.size})"
+                            else
+                                "Saved Anecdotes (${savedJokes.size}) • Stations (${favoritedStations.size})",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    if (savedJokes.isNotEmpty()) {
+                        Button(
+                            onClick = { viewModel.playAllSavedJokes() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFFFD700),
+                                contentColor = Color(0xFF140727)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.testTag("play_all_top_button")
+                        ) {
+                            Icon(imageVector = Icons.Default.Campaign, contentDescription = "Play All", modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = Loc.get("play_all_top", lang),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         // Favorited Radio streams header
         item {
             Text(
                 text = Loc.get("fav_stations_header", lang),
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                modifier = Modifier.padding(top = 16.dp)
+                fontSize = 16.sp
             )
         }
 
         if (favoritedStations.isEmpty()) {
             item {
-                Text(
-                    text = Loc.get("no_fav_stations", lang),
-                    color = Color.White.copy(alpha = 0.5f),
-                    fontSize = 13.sp,
-                    fontStyle = FontStyle.Italic
-                )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF140727).copy(alpha = 0.6f),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Radio,
+                            contentDescription = "Radio",
+                            tint = Color(0xFFFFD700).copy(alpha = 0.6f),
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = Loc.get("no_fav_stations", lang),
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = 13.sp,
+                            fontStyle = FontStyle.Italic,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        if (onNavigateTab != null) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            OutlinedButton(
+                                onClick = { onNavigateTab(2) },
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFFD700)),
+                                border = BorderStroke(1.dp, Color(0xFFFFD700).copy(alpha = 0.5f)),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text(
+                                    text = if (lang == "Russian" || lang == "Русский") "📻 Открыть Радио" else "📻 Open Radio",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+                }
             }
         } else {
             items(favoritedStations) { station ->
@@ -1925,18 +3385,32 @@ fun FavoritesTab(viewModel: AppViewModel, lang: String) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { viewModel.playRadio(station) },
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
-                    shape = RoundedCornerShape(12.dp)
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF140727).copy(alpha = 0.85f),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, Color(0xFFFFD700).copy(alpha = 0.3f))
                 ) {
                     Row(
-                        modifier = Modifier.padding(12.dp),
+                        modifier = Modifier.padding(14.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = Icons.Default.Radio, contentDescription = "Radio", tint = Color(0xFFFFD700))
+                        Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .background(Color(0xFFFFD700).copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(imageVector = Icons.Default.Radio, contentDescription = "Radio", tint = Color(0xFFFFD700), modifier = Modifier.size(20.dp))
+                            }
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text(text = station.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Column {
+                                Text(text = station.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text(text = "LIVE Stream", color = Color(0xFF00FFCC), fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                            }
                         }
                         IconButton(onClick = { viewModel.toggleRadioFavorite(station) }) {
                             Icon(imageVector = Icons.Filled.Star, contentDescription = "Unstar", tint = Color(0xFFFFD700))
@@ -1948,30 +3422,179 @@ fun FavoritesTab(viewModel: AppViewModel, lang: String) {
 
         // Saved Jokes header
         item {
-            Text(
-                text = Loc.get("saved_anecdotes_header", lang),
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                modifier = Modifier.padding(top = 12.dp)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = Loc.get("saved_anecdotes_header", lang),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+
+                if (savedJokes.isNotEmpty()) {
+                    val context = LocalContext.current
+                    OutlinedButton(
+                        onClick = {
+                            val text = viewModel.formatAllSavedJokesForExport()
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val clip = ClipData.newPlainText("Folklore Anthology", text)
+                            clipboard.setPrimaryClip(clip)
+
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, "Folklore Anthology")
+                                putExtra(Intent.EXTRA_TEXT, text)
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, Loc.get("export_all_jokes", lang)))
+                            Toast.makeText(context, Loc.get("exported_all_toast", lang), Toast.LENGTH_SHORT).show()
+                        },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFFD700)),
+                        border = BorderStroke(1.dp, Color(0xFFFFD700).copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.testTag("export_anthology_button")
+                    ) {
+                        Icon(imageVector = Icons.Default.Share, contentDescription = "Export", modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = Loc.get("export_all_jokes", lang), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+
+        if (savedJokes.isNotEmpty()) {
+            item {
+                val culturesInTop = listOf("all", "Jewish", "Uzbek", "Armenian", "Chukchi", "Yakut", "Kamchatka", "American", "African", "Trends Digest", "Campfire Wisdom")
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                ) {
+                    items(culturesInTop) { cult ->
+                        val isSelected = selectedCultureFilter.lowercase() == cult.lowercase()
+                        val label = when (cult) {
+                            "all" -> Loc.get("filter_all_cultures", lang)
+                            "Trends Digest" -> if (lang == "Russian" || lang == "Русский") "Тренды" else "Trends"
+                            "Campfire Wisdom" -> if (lang == "Russian" || lang == "Русский") "Мудрость" else "Wisdom"
+                            else -> Loc.getCultureName(cult, lang)
+                        }
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { viewModel.setTopCultureFilter(cult) },
+                            label = {
+                                Text(
+                                    text = label,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) Color(0xFF1E1035) else Color.White
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(0xFFFFD700),
+                                containerColor = Color.White.copy(alpha = 0.05f)
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = isSelected,
+                                selectedBorderColor = Color(0xFFFFD700),
+                                borderColor = Color.White.copy(alpha = 0.12f)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
+            }
         }
 
         if (savedJokes.isEmpty()) {
             item {
-                Text(
-                    text = Loc.get("no_saved_anecdotes", lang),
-                    color = Color.White.copy(alpha = 0.5f),
-                    fontSize = 13.sp,
-                    fontStyle = FontStyle.Italic
-                )
-            }
-        } else {
-            items(savedJokes) { joke ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                    shape = RoundedCornerShape(16.dp)
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF140727).copy(alpha = 0.6f),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ChatBubble,
+                            contentDescription = "Anecdotes",
+                            tint = Color(0xFFFFD700).copy(alpha = 0.6f),
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = Loc.get("no_saved_anecdotes", lang),
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 13.sp,
+                            fontStyle = FontStyle.Italic,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        if (onNavigateTab != null) {
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Button(
+                                onClick = { onNavigateTab(0) },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFFFD700),
+                                    contentColor = Color(0xFF140727)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Forum,
+                                    contentDescription = "Storyteller",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = if (lang == "Russian" || lang == "Русский") "🎙️ Перейти к Сказочнику" else "🎙️ Go to Storyteller",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            val filteredJokes = if (selectedCultureFilter.lowercase() == "all") savedJokes
+            else savedJokes.filter { it.culture.lowercase() == selectedCultureFilter.lowercase() }
+
+            if (filteredJokes.isEmpty()) {
+                item {
+                    Text(
+                        text = if (lang == "Russian" || lang == "Русский") "В этой категории пока нет сохранённых анекдотов" else "No saved anecdotes in this category yet",
+                        color = Color.White.copy(alpha = 0.5f),
+                        fontSize = 13.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp)
+                    )
+                }
+            } else {
+                itemsIndexed(filteredJokes) { index, joke ->
+                val isSpeakingThis = (ttsCurrentId == "saved_joke_${joke.id}") && ttsSpeaking
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSpeakingThis) Color(0xFF2C194D) else Color(0xFF140727).copy(alpha = 0.85f),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(
+                        if (isSpeakingThis) 2.dp else 1.dp,
+                        if (isSpeakingThis) Color(0xFFFFD700) else Color.White.copy(alpha = 0.12f)
+                    )
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
@@ -1979,24 +3602,60 @@ fun FavoritesTab(viewModel: AppViewModel, lang: String) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
-                                Text(
-                                    text = "${Loc.get("style_prefix", lang)} ${Loc.getCultureName(joke.culture, lang)}",
-                                    color = Color(0xFFFFD700),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
-                                )
-                                if (joke.situation.isNotBlank()) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Golden Rank Badge
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .background(Color(0xFFFFD700).copy(alpha = 0.2f), CircleShape)
+                                        .border(1.dp, Color(0xFFFFD700).copy(alpha = 0.6f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Text(
-                                        text = "${Loc.get("topic_prefix", lang)} ${joke.situation}",
-                                        color = Color.White.copy(alpha = 0.5f),
-                                        fontSize = 10.sp
+                                        text = "#${index + 1}",
+                                        color = Color(0xFFFFD700),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
+                                }
+
+                                Spacer(modifier = Modifier.width(10.dp))
+
+                                Column {
+                                    Text(
+                                        text = "${Loc.get("style_prefix", lang)} ${Loc.getCultureName(joke.culture, lang)}",
+                                        color = Color(0xFFFFD700),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp
+                                    )
+                                    if (joke.situation.isNotBlank()) {
+                                        Text(
+                                            text = "${Loc.get("topic_prefix", lang)} ${joke.situation}",
+                                            color = Color.White.copy(alpha = 0.6f),
+                                            fontSize = 10.sp
+                                        )
+                                    }
                                 }
                             }
 
-                            Row {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 val context = LocalContext.current
+
+                                // TTS Listen action
+                                IconButton(
+                                    onClick = { viewModel.toggleTtsSavedJoke(joke) },
+                                    modifier = Modifier.testTag("tts_saved_joke_${joke.id}")
+                                ) {
+                                    Icon(
+                                        imageVector = if (isSpeakingThis) Icons.Default.GraphicEq else Icons.AutoMirrored.Filled.VolumeUp,
+                                        contentDescription = if (isSpeakingThis) Loc.get("tts_stop", lang) else Loc.get("tts_listen", lang),
+                                        tint = if (isSpeakingThis) Color(0xFFFFD700) else Color.White.copy(alpha = 0.7f)
+                                    )
+                                }
+
                                 IconButton(onClick = {
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     val clip = ClipData.newPlainText("joke", joke.jokeText)
@@ -2023,6 +3682,7 @@ fun FavoritesTab(viewModel: AppViewModel, lang: String) {
                 }
             }
         }
+    }
 
         item {
             Spacer(modifier = Modifier.height(150.dp))
@@ -2041,6 +3701,11 @@ fun formatStreamTime(millis: Long): String {
 // Persistent bottom media player component for live internet radio streaming
 @Composable
 fun PersistentBottomMediaPlayer(viewModel: AppViewModel, lang: String) {
+    RadioPlayer(viewModel = viewModel, lang = lang)
+}
+
+@Composable
+fun LegacyPersistentBottomMediaPlayer(viewModel: AppViewModel, lang: String) {
     val isPlaying by viewModel.isRadioPlaying.collectAsState()
     val isLoading by viewModel.isRadioLoading.collectAsState()
     val playingStation by viewModel.selectedStation.collectAsState()
@@ -2049,6 +3714,7 @@ fun PersistentBottomMediaPlayer(viewModel: AppViewModel, lang: String) {
     val durationMs by viewModel.radioDurationMs.collectAsState()
     val isLiveEdge by viewModel.isLiveEdge.collectAsState()
     val volume by viewModel.radioVolume.collectAsState()
+    val sleepTimerSeconds by viewModel.sleepTimerSeconds.collectAsState()
 
     // Active station: either currently selected station or fallback to first station in library
     val activeStation = playingStation ?: radioStations.firstOrNull { it.isFavorite } ?: radioStations.firstOrNull()
@@ -2207,8 +3873,28 @@ fun PersistentBottomMediaPlayer(viewModel: AppViewModel, lang: String) {
                     }
                 }
 
-                // Quick Header Action icons: Favorite toggle & Expand/Volume toggle
+                // Quick Header Action icons: Sleep timer badge + Favorite toggle & Expand/Volume toggle
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (sleepTimerSeconds > 0) {
+                        Surface(
+                            onClick = { viewModel.cancelSleepTimer() },
+                            color = Color(0xFF00FFCC).copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, Color(0xFF00FFCC).copy(alpha = 0.5f)),
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .testTag("sleep_timer_badge")
+                        ) {
+                            Text(
+                                text = "🌙 ${sleepTimerSeconds / 60}:${String.format("%02d", sleepTimerSeconds % 60)}",
+                                color = Color(0xFF00FFCC),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
                     activeStation?.let { st ->
                         IconButton(
                             onClick = { viewModel.toggleRadioFavorite(st) },
@@ -2315,11 +4001,12 @@ fun PersistentBottomMediaPlayer(viewModel: AppViewModel, lang: String) {
                 }
             }
 
-            // Controls Row: Station skip buttons, Main Play/Pause, and Stop button
+            // Dedicated Media Control Bar: Station skip buttons, Main Play/Pause, and Stop button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 2.dp),
+                    .padding(top = 4.dp)
+                    .testTag("media_control_bar"),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -2341,21 +4028,21 @@ fun PersistentBottomMediaPlayer(viewModel: AppViewModel, lang: String) {
                     IconButton(
                         onClick = { viewModel.playPreviousStation() },
                         modifier = Modifier
-                            .size(34.dp)
+                            .size(36.dp)
                             .testTag("media_prev_button")
                     ) {
                         Icon(
                             imageVector = Icons.Default.SkipPrevious,
                             contentDescription = Loc.get("prev_station", lang),
-                            tint = Color.White.copy(alpha = 0.8f),
-                            modifier = Modifier.size(20.dp)
+                            tint = Color.White.copy(alpha = 0.85f),
+                            modifier = Modifier.size(22.dp)
                         )
                     }
 
                     // Main Play/Pause Button
                     Box(
                         modifier = Modifier
-                            .size(46.dp)
+                            .size(48.dp)
                             .clip(CircleShape)
                             .background(
                                 Brush.linearGradient(
@@ -2374,14 +4061,14 @@ fun PersistentBottomMediaPlayer(viewModel: AppViewModel, lang: String) {
                             CircularProgressIndicator(
                                 color = Color(0xFF140727),
                                 strokeWidth = 2.5.dp,
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         } else {
                             Icon(
                                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                 contentDescription = if (isPlaying) "Pause" else "Play",
                                 tint = Color(0xFF140727),
-                                modifier = Modifier.size(26.dp)
+                                modifier = Modifier.size(28.dp)
                             )
                         }
                     }
@@ -2390,14 +4077,14 @@ fun PersistentBottomMediaPlayer(viewModel: AppViewModel, lang: String) {
                     IconButton(
                         onClick = { viewModel.playNextStation() },
                         modifier = Modifier
-                            .size(34.dp)
+                            .size(36.dp)
                             .testTag("media_next_button")
                     ) {
                         Icon(
                             imageVector = Icons.Default.SkipNext,
                             contentDescription = Loc.get("next_station", lang),
-                            tint = Color.White.copy(alpha = 0.8f),
-                            modifier = Modifier.size(20.dp)
+                            tint = Color.White.copy(alpha = 0.85f),
+                            modifier = Modifier.size(22.dp)
                         )
                     }
 
@@ -2405,7 +4092,9 @@ fun PersistentBottomMediaPlayer(viewModel: AppViewModel, lang: String) {
                     if (isPlaying || isLoading) {
                         IconButton(
                             onClick = { viewModel.stopRadio() },
-                            modifier = Modifier.size(34.dp)
+                            modifier = Modifier
+                                .size(36.dp)
+                                .testTag("media_stop_button")
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Stop,
@@ -2418,62 +4107,127 @@ fun PersistentBottomMediaPlayer(viewModel: AppViewModel, lang: String) {
                 }
             }
 
-            // Expandable Audio settings drawer (Volume slider & technical info)
+            // Dedicated Always-Visible Volume Slider Bar for live radio stream
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp)
+                    .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                    .testTag("media_volume_control_row"),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = { viewModel.toggleRadioMute() },
+                    modifier = Modifier
+                        .size(32.dp)
+                        .testTag("volume_mute_button")
+                ) {
+                    val volumeIcon = when {
+                        volume <= 0.01f -> Icons.AutoMirrored.Filled.VolumeOff
+                        volume < 0.5f -> Icons.AutoMirrored.Filled.VolumeDown
+                        else -> Icons.AutoMirrored.Filled.VolumeUp
+                    }
+                    Icon(
+                        imageVector = volumeIcon,
+                        contentDescription = "Mute / Unmute",
+                        tint = if (volume > 0.01f) Color(0xFFFFD700) else Color.White.copy(alpha = 0.4f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Text(
+                    text = Loc.get("volume_title", lang),
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+
+                Slider(
+                    value = volume,
+                    onValueChange = { viewModel.setRadioVolume(it) },
+                    valueRange = 0f..1f,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(28.dp)
+                        .testTag("media_volume_slider"),
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color(0xFFFFD700),
+                        activeTrackColor = Color(0xFFFFD700),
+                        inactiveTrackColor = Color.White.copy(alpha = 0.2f)
+                    )
+                )
+
+                Text(
+                    text = "${(volume * 100).toInt()}%",
+                    color = Color(0xFFFFD700),
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.width(34.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                )
+            }
+
+            // Expandable Sleep Timer Drawer
             AnimatedVisibility(visible = isExpanded) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp)
+                        .padding(top = 8.dp)
                         .background(Color.White.copy(alpha = 0.04f), RoundedCornerShape(12.dp))
                         .padding(10.dp)
                 ) {
+                    // Sleep Timer Quick Selection
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        IconButton(
-                            onClick = {
-                                if (volume > 0.05f) viewModel.setRadioVolume(0f) else viewModel.setRadioVolume(1f)
-                            },
-                            modifier = Modifier.size(28.dp)
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = if (volume > 0.05f) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                                contentDescription = "Mute",
+                                imageVector = Icons.Default.Timer,
+                                contentDescription = "Sleep Timer",
                                 tint = Color(0xFFFFD700),
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = Loc.get("sleep_timer", lang),
+                                color = Color.White.copy(alpha = 0.8f),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
 
-                        Text(
-                            text = Loc.get("volume_title", lang),
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 6.dp)
-                        )
-
-                        Slider(
-                            value = volume,
-                            onValueChange = { viewModel.setRadioVolume(it) },
-                            valueRange = 0f..1f,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(24.dp),
-                            colors = SliderDefaults.colors(
-                                thumbColor = Color(0xFFFFD700),
-                                activeTrackColor = Color(0xFFFFD700),
-                                inactiveTrackColor = Color.White.copy(alpha = 0.2f)
-                            )
-                        )
-
-                        Text(
-                            text = "${(volume * 100).toInt()}%",
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace,
-                            modifier = Modifier.width(32.dp)
-                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            listOf(
+                                0 to Loc.get("sleep_timer_off", lang),
+                                15 to "15m",
+                                30 to "30m",
+                                45 to "45m",
+                                60 to "60m"
+                            ).forEach { (mins, label) ->
+                                val isSelected = if (mins == 0) sleepTimerSeconds == 0 else (sleepTimerSeconds in (mins * 60 - 60)..(mins * 60))
+                                Surface(
+                                    onClick = {
+                                        if (mins == 0) viewModel.cancelSleepTimer() else viewModel.setSleepTimerMinutes(mins)
+                                    },
+                                    color = if (isSelected) Color(0xFFFFD700) else Color.White.copy(alpha = 0.06f),
+                                    shape = RoundedCornerShape(6.dp),
+                                    border = BorderStroke(1.dp, if (isSelected) Color(0xFFFFD700) else Color.White.copy(alpha = 0.15f))
+                                ) {
+                                    Text(
+                                        text = label,
+                                        color = if (isSelected) Color(0xFF140727) else Color.White.copy(alpha = 0.8f),
+                                        fontSize = 10.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -2610,6 +4364,7 @@ fun Html5AudioPlayer(viewModel: AppViewModel) {
         AndroidView(
             factory = { ctx ->
                 WebView(ctx).apply {
+                    setBackgroundColor(android.graphics.Color.TRANSPARENT)
                     settings.javaScriptEnabled = true
                     settings.mediaPlaybackRequiresUserGesture = false
                     settings.domStorageEnabled = true

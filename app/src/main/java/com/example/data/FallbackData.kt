@@ -127,7 +127,7 @@ object FallbackData {
 
     val defaultNewsDigests = listOf(
         NewsDigest(
-            title = "X.com Buzz: The Rise of AI Programmers",
+            title = "AlphaSignalAI: The Rise of AI Programmers",
             content = "Tech accounts are actively discussing whether AI will completely replace software developers within the next two years. Opinions are split between optimism about rapid progress and warnings of excessive hype.",
             attachedJoke = "— Сарочка, ты слышала? Искусственный интеллект теперь умеет писать программы за людей!\n— Ой, Моня, я тебя умоляю! А сможет ли этот ваш интеллект объяснить моей маме, почему у неё зависла стиральная машина, так, шоб она не обозвала его бестолочью?",
             attachedJokeCulture = "Jewish"
@@ -139,7 +139,7 @@ object FallbackData {
             attachedJokeCulture = "Uzbek"
         ),
         NewsDigest(
-            title = "Space X Trend: Mars Colonization Timelines Challenged",
+            title = "Space Tech: Mars Colonization Timelines Challenged",
             content = "Space enthusiasts are debating Elon Musk's ambitious timelines for sending the first human colony to Mars. Scientists highlight challenges of radiation, soil toxicity, and psychological stress during the 9-month trip.",
             attachedJoke = "Чукча сидит на берегу тундры и смотрит на ночное небо. К нему подходит геолог и говорит:\n— Слышь, чукча, скоро американцы и русские на Марс полетят! Будут там яранги строить, оленей разводить!\nЧукча подумал, попыхтел трубкой и отвечает:\n— Оленей разводить на Марсе — это хорошо, однако! Там белых медведей нету, воровать оленей некому. Но скажи, геолог, как туда чукотский ишак с грузом дойдет? Девять месяцев пешком идти, однако, никакого сена не хватит!",
             attachedJokeCulture = "Chukchi"
@@ -161,7 +161,7 @@ object FallbackData {
     fun getEnglishNewsDigests(): List<NewsDigest> {
         return listOf(
             NewsDigest(
-                title = "X.com Buzz: The Rise of AI Programmers",
+                title = "AlphaSignalAI: The Rise of AI Programmers",
                 content = "Tech accounts are actively discussing whether AI will completely replace software developers within the next two years. Opinions are split between optimism about rapid progress and warnings of excessive hype.",
                 attachedJoke = "— Sarah, did you hear? Artificial intelligence can now write programs instead of humans!\n— Oh, Monya, I beg you! But will this intelligence of yours be able to explain to my mother why her washing machine froze, without her calling him a good-for-nothing?",
                 attachedJokeCulture = "Jewish"

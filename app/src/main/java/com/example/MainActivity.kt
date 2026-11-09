@@ -15,10 +15,12 @@ import com.example.ui.screens.LanguageSelectionScreen
 import com.example.ui.screens.MainAppScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.viewmodel.AppViewModel
+import com.example.util.configureAppCheck
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    configureAppCheck(this, intent)
     enableEdgeToEdge()
     setContent {
       MyApplicationTheme(dynamicColor = false) { // Disable dynamic color to enforce our premium custom colors

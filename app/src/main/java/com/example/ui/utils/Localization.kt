@@ -17,16 +17,16 @@ object Loc {
             "Japanese" to "語り部"
         ),
         "tab_news" to mapOf(
-            "English" to "X.com Trends",
-            "Russian" to "Тренды X.com",
-            "Spanish" to "Tendencias X.com",
-            "Chinese" to "X.com趋势",
-            "Hindi" to "X.com रुझान",
-            "Arabic" to "اتجاهات X.com",
-            "French" to "Tendances X.com",
-            "Portuguese" to "Tendências X.com",
-            "German" to "X.com-Trends",
-            "Japanese" to "X.comトレンド"
+            "English" to "Trends",
+            "Russian" to "Тренды",
+            "Spanish" to "Tendencias",
+            "Chinese" to "趋势",
+            "Hindi" to "रुझान",
+            "Arabic" to "الاتجاهات",
+            "French" to "Tendances",
+            "Portuguese" to "Tendências",
+            "German" to "Trends",
+            "Japanese" to "トレンド"
         ),
         "tab_radio" to mapOf(
             "English" to "Radio",
@@ -41,16 +41,16 @@ object Loc {
             "Japanese" to "ラジオ"
         ),
         "tab_saved" to mapOf(
-            "English" to "Saved",
-            "Russian" to "Сохранённые",
-            "Spanish" to "Guardados",
-            "Chinese" to "已保存",
-            "Hindi" to "सहेजे गए",
-            "Arabic" to "المحفوظة",
-            "French" to "Enregistrés",
-            "Portuguese" to "Salvos",
-            "German" to "Gespeichert",
-            "Japanese" to "保存済み"
+            "English" to "TOP",
+            "Russian" to "ТОП",
+            "Spanish" to "TOP",
+            "Chinese" to "TOP",
+            "Hindi" to "टॉप",
+            "Arabic" to "الأفضل",
+            "French" to "TOP",
+            "Portuguese" to "TOP",
+            "German" to "TOP",
+            "Japanese" to "TOP"
         ),
         "select_style" to mapOf(
             "English" to "Select storytelling style:",
@@ -197,16 +197,16 @@ object Loc {
             "Japanese" to "お気に入りから削除しました！"
         ),
         "x_integration" to mapOf(
-            "English" to "Integrated X Accounts",
-            "Russian" to "Интеграция X-аккаунтов",
-            "Spanish" to "Cuentas de X Integradas",
-            "Chinese" to "已集成X账号",
-            "Hindi" to "एकीकृत X खाते",
-            "Arabic" to "حسابات X المتكاملة",
-            "French" to "Comptes X intégrés",
-            "Portuguese" to "Contas do X Integradas",
-            "German" to "Integrierte X-Konten",
-            "Japanese" to "統合されたXアカウント"
+            "English" to "Sources & Channels",
+            "Russian" to "Источники и каналы",
+            "Spanish" to "Fuentes y canales",
+            "Chinese" to "来源与渠道",
+            "Hindi" to "स्रोत और चैनल",
+            "Arabic" to "المصادر والقنوات",
+            "French" to "Sources et canaux",
+            "Portuguese" to "Fontes e canais",
+            "German" to "Quellen & Kanäle",
+            "Japanese" to "ソースとチャンネル"
         ),
         "active_suffix" to mapOf(
             "English" to "active",
@@ -593,28 +593,28 @@ object Loc {
             "Japanese" to "お気に入りのラジオ局はありません。ラジオ配信の星マークをタップして追加してください！"
         ),
         "saved_anecdotes_header" to mapOf(
-            "English" to "Saved Folk Anecdotes:",
-            "Russian" to "Любимые анекдоты:",
-            "Spanish" to "Anécdotas populares guardadas:",
-            "Chinese" to "已保存民间幽默:",
-            "Hindi" to "सहेजे गए लोक चुटकुले:",
-            "Arabic" to "النكات الشعبية المحفوظة:",
-            "French" to "Blagues populaires enregistrées :",
-            "Portuguese" to "Anedotas folclóricas salvas:",
-            "German" to "Gespeicherte Volksanekdoten:",
-            "Japanese" to "保存済みの民間伝承ユーモア:"
+            "English" to "TOP Folk Anecdotes:",
+            "Russian" to "Золотой ТОП анекдотов:",
+            "Spanish" to "TOP anécdotas populares:",
+            "Chinese" to "TOP民间幽默:",
+            "Hindi" to "टॉप लोक चुटкуले:",
+            "Arabic" to "أفضل النكات الشعبية:",
+            "French" to "TOP blagues populaires :",
+            "Portuguese" to "TOP anedotas folclóricas:",
+            "German" to "TOP Volksanekdoten:",
+            "Japanese" to "TOP民間伝承ユーモア:"
         ),
         "no_saved_anecdotes" to mapOf(
-            "English" to "No saved anecdotes yet. Go generate some stories with our storyteller!",
-            "Russian" to "Нет сохранённых анекдотов. Загляните к Сказочнику!",
-            "Spanish" to "No hay chistes guardados aún. ¡Genera algunas historias con nuestro cuentacuentos!",
-            "Chinese" to "暂无保存故事。快去故事家页面生成一些有趣的故事吧！",
-            "Hindi" to "अभी तक कोई सहेजा गया चुटकुला नहीं है। हमारे कहानीकार के साथ कुछ कहानियाँ उत्पन्न करें!",
-            "Arabic" to "لا توجد نكات محفوظة بعد. اذهب لتوليد بعض القصص مع حكواتينا!",
-            "French" to "Pas encore de blague enregistrée. Allez générer des histoires avec notre conteur !",
-            "Portuguese" to "Nenhuma anedota salva ainda. Vá gerar algumas histórias com o nosso contador de histórias!",
-            "German" to "Noch keine gespeicherten Anekdoten. Lass dir vom Geschichtenerzähler welche erzählen!",
-            "Japanese" to "保存済みのユーモアはありません。「語り部」でお話を作成してみましょう！"
+            "English" to "No anecdotes in TOP yet. Go generate some stories with our storyteller!",
+            "Russian" to "В ТОПе пока пусто. Загляните к Сказочнику за новой историей!",
+            "Spanish" to "No hay anécdotas en el TOP aún. ¡Genera historias con nuestro cuentacuentos!",
+            "Chinese" to "TOP暂无故事。快去故事家页面生成一些有趣的故事吧！",
+            "Hindi" to "टॉप में अभी कोई चुटकुला नहीं है। हमारे कहानीकार से कहानियाँ प्राप्त करें!",
+            "Arabic" to "لا توجد نكات في القائمة بعد. اذهب لتوليد بعض القصص مع حكواتينا!",
+            "French" to "Rien dans le TOP pour l'instant. Allez générer des histoires avec notre conteur !",
+            "Portuguese" to "Nada no TOP ainda. Vá gerar algumas histórias com o nosso contador de histórias!",
+            "German" to "Noch keine Anekdoten im TOP. Lass dir vom Geschichtenerzähler welche erzählen!",
+            "Japanese" to "TOPにはまだ何もありません。「語り部」でお話を作成してみましょう！"
         ),
         "style_prefix" to mapOf(
             "English" to "Style:",
@@ -797,28 +797,28 @@ object Loc {
             "Japanese" to "民俗ユーモア"
         ),
         "monitoring_x_header" to mapOf(
-            "English" to "Simulated X.com Live Feed",
-            "Russian" to "Мониторинг X.com (Twitter Live)",
-            "Spanish" to "Feed de X.com en vivo simulado",
-            "Chinese" to "模拟X.com实时推文流",
-            "Hindi" to "सिम्युलेटेड X.com लाइव फ़ीड",
-            "Arabic" to "بث X.com المباشر المحاكى",
-            "French" to "Flux en direct X.com simulé",
-            "Portuguese" to "Feed ao vivo simulado do X.com",
-            "German" to "Simulierter X.com-Live-Feed",
-            "Japanese" to "シミュレートされたX.comライブフィード"
+            "English" to "Trends",
+            "Russian" to "Тренды",
+            "Spanish" to "Tendencias",
+            "Chinese" to "趋势",
+            "Hindi" to "रुझान",
+            "Arabic" to "الاتجاهات",
+            "French" to "Tendances",
+            "Portuguese" to "Tendências",
+            "German" to "Trends",
+            "Japanese" to "トレンド"
         ),
         "monitoring_x_subheader" to mapOf(
-            "English" to "Live-simulate the top 100 news sources on X.com via Gemini API",
-            "Russian" to "Поиск по API и ИИ-анализ 100 топовых каналов",
-            "Spanish" to "Simulación en vivo de las 100 principales fuentes en X.com",
-            "Chinese" to "通过Gemini API对X.com上排名前100的新闻源进行实时模拟",
-            "Hindi" to "जेमिनी एपीआई के माध्यम से X.com पर शीर्ष 100 समाचार स्रोतों का लाइव सिमुलेशन",
-            "Arabic" to "محاكاة مباشرة لأهم 100 مصدر إخباري على X.com عبر واجهة Gemini",
-            "French" to "Simulation en direct des 100 principales sources d'actualités sur X.com via Gemini API",
-            "Portuguese" to "Simulação ao vivo das 100 principais fontes de notícias no X.com",
-            "German" to "Live-Simulation der Top-100-Newsquellen auf X.com via Gemini-API",
-            "Japanese" to "Gemini APIを介してX.comのトップ100ニュースソースをリアルタイムにシミュレート"
+            "English" to "Source: AlphaSignalAI • Tech & Science Insights",
+            "Russian" to "Источник: AlphaSignalAI • Главные инсайты и технологии",
+            "Spanish" to "Fuente: AlphaSignalAI • Avances e información",
+            "Chinese" to "来源: AlphaSignalAI • 科技与前沿洞察",
+            "Hindi" to "स्रोत: AlphaSignalAI • प्रौद्योगिकी अंतर्दृष्टि",
+            "Arabic" to "المصدر: AlphaSignalAI • رؤى تكنولوجية وعلمية",
+            "French" to "Source : AlphaSignalAI • Insights et percées technologiques",
+            "Portuguese" to "Fonte: AlphaSignalAI • Insights e inovações científicas",
+            "German" to "Quelle: AlphaSignalAI • Technologie- und Wissenschafts-Insights",
+            "Japanese" to "ソース: AlphaSignalAI • 最先端技術インサイト"
         ),
         "filter_all" to mapOf(
             "English" to "All Trends",
@@ -1047,6 +1047,148 @@ object Loc {
             "Portuguese" to "Avançar/Retroceder",
             "German" to "Puffer-Suchlauf",
             "Japanese" to "バッファシーク"
+        ),
+        "tts_listen" to mapOf(
+            "English" to "Listen", "Russian" to "Слушать", "Spanish" to "Escuchar",
+            "Chinese" to "听朗读", "Hindi" to "सुनें", "Arabic" to "استمع",
+            "French" to "Écouter", "Portuguese" to "Ouvir", "German" to "Anhören", "Japanese" to "聴く"
+        ),
+        "tts_stop" to mapOf(
+            "English" to "Stop", "Russian" to "Остановить", "Spanish" to "Detener",
+            "Chinese" to "停止", "Hindi" to "रोकें", "Arabic" to "إيقاف",
+            "French" to "Arrêter", "Portuguese" to "Parar", "German" to "Stoppen", "Japanese" to "停止"
+        ),
+        "tts_narrate_all" to mapOf(
+            "English" to "🎙️ Narrate Session (TTS)",
+            "Russian" to "🎙️ Слушать сказителя (TTS)",
+            "Spanish" to "🎙️ Narrar sesión (TTS)",
+            "Chinese" to "🎙️ 朗读整期故事 (TTS)",
+            "Hindi" to "🎙️ कहानियां सुनें (TTS)",
+            "Arabic" to "🎙️ سرد الجلسة (TTS)",
+            "French" to "🎙️ Raconter la session (TTS)",
+            "Portuguese" to "🎙️ Narrar sessão (TTS)",
+            "German" to "🎙️ Erzählstunde anhören (TTS)",
+            "Japanese" to "🎙️ 語り部セッションを再生 (TTS)"
+        ),
+        "tts_voice_elder" to mapOf(
+            "English" to "Elder Storyteller", "Russian" to "Мудрый старец", "Spanish" to "Anciano sabio",
+            "Chinese" to "智慧长者", "Hindi" to "बुजुर्ग कहानीकार", "Arabic" to "الحكيم المسن",
+            "French" to "Vieux sage", "Portuguese" to "Ancião sábio", "German" to "Weiser Ältester", "Japanese" to "賢者の語り"
+        ),
+        "tts_voice_classic" to mapOf(
+            "English" to "Classic", "Russian" to "Классический", "Spanish" to "Clásico",
+            "Chinese" to "标准原声", "Hindi" to "क्लासिक", "Arabic" to "كلاسيكي",
+            "French" to "Classique", "Portuguese" to "Clássico", "German" to "Klassisch", "Japanese" to "標準"
+        ),
+        "tts_voice_cheerful" to mapOf(
+            "English" to "Cheerful Humorist", "Russian" to "Задорный юморист", "Spanish" to "Humorista vivaz",
+            "Chinese" to "风趣幽默", "Hindi" to "उत्साही हास्यकार", "Arabic" to "فكاهي مرح",
+            "French" to "Humoriste enjoué", "Portuguese" to "Humorista alegre", "German" to "Lebhafter Humorist", "Japanese" to "陽気な語り"
+        ),
+        "tts_speed" to mapOf(
+            "English" to "Speed", "Russian" to "Скорость", "Spanish" to "Velocidad",
+            "Chinese" to "语速", "Hindi" to "गति", "Arabic" to "السرعة",
+            "French" to "Vitesse", "Portuguese" to "Velocidade", "German" to "Tempo", "Japanese" to "速度"
+        ),
+        "tts_reading" to mapOf(
+            "English" to "Storyteller Voice Active", "Russian" to "Голос сказителя звучит", "Spanish" to "Voz del narrador activa",
+            "Chinese" to "正在讲述故事", "Hindi" to "कथावाचक बोल रहा है", "Arabic" to "صوت الحكواتي يعمل",
+            "French" to "Voix du conteur active", "Portuguese" to "Voz do narrador ativa", "German" to "Erzählstimme aktiv", "Japanese" to "語り部の音声再生中"
+        ),
+        "tts_pause" to mapOf(
+            "English" to "Pause", "Russian" to "Пауза", "Spanish" to "Pausar",
+            "Chinese" to "暂停", "Hindi" to "विराम", "Arabic" to "إيقاف مؤقت",
+            "French" to "Pause", "Portuguese" to "Pausar", "German" to "Pause", "Japanese" to "一時停止"
+        ),
+        "tts_resume" to mapOf(
+            "English" to "Resume", "Russian" to "Продолжить", "Spanish" to "Reanudar",
+            "Chinese" to "继续", "Hindi" to "पुनः आरंभ", "Arabic" to "استئناف",
+            "French" to "Reprendre", "Portuguese" to "Retomar", "German" to "Fortsetzen", "Japanese" to "再開"
+        ),
+        "tts_saved_joke" to mapOf(
+            "English" to "Saved Anecdote", "Russian" to "Сохранённый анекдот", "Spanish" to "Chiste guardado",
+            "Chinese" to "已收藏故事", "Hindi" to "सहेजा गया चुटकुला", "Arabic" to "طرفة محفوظة",
+            "French" to "Blague enregistrée", "Portuguese" to "Piada salva", "German" to "Gespeicherter Witz", "Japanese" to "保存された小話"
+        ),
+        "sleep_timer" to mapOf(
+            "English" to "Sleep Timer", "Russian" to "Таймер сна", "Spanish" to "Temporizador",
+            "Chinese" to "睡眠定时器", "Hindi" to "स्लीप टाइमर", "Arabic" to "مؤقت النوم",
+            "French" to "Minuterie de veille", "Portuguese" to "Temporizador de sono", "German" to "Schlummer-Timer", "Japanese" to "スリープタイマー"
+        ),
+        "sleep_timer_off" to mapOf(
+            "English" to "Off", "Russian" to "Выкл", "Spanish" to "Desactivado",
+            "Chinese" to "关闭", "Hindi" to "बंद", "Arabic" to "إيقاف",
+            "French" to "Désactivé", "Portuguese" to "Desligado", "German" to "Aus", "Japanese" to "オフ"
+        ),
+        "campfire_ambience" to mapOf(
+            "English" to "🔥 Campfire Ambience", "Russian" to "🔥 Атмосфера у костра", "Spanish" to "🔥 Ambiente de hoguera",
+            "Chinese" to "🔥 篝火氛围音", "Hindi" to "🔥 कैम्पफ़ायर माहौल", "Arabic" to "🔥 أجواء نار المخيم",
+            "French" to "🔥 Ambiance feu de camp", "Portuguese" to "🔥 Ambiente de fogueira", "German" to "🔥 Lagerfeuer-Atmosphäre", "Japanese" to "🔥 焚き火の環境音"
+        ),
+        "voice_input_prompt" to mapOf(
+            "English" to "Describe the context or topic for jokes...", "Russian" to "Назовите тему или ситуацию для анекдота...", "Spanish" to "Describa el contexto o tema...",
+            "Chinese" to "说出故事背景或笑话主题...", "Hindi" to "चुटकुले के लिए संदर्भ या विषय बोलें...", "Arabic" to "تحدث عن موضوع الطرفة أو السياق...",
+            "French" to "Décrivez le contexte ou le sujet...", "Portuguese" to "Diga o contexto ou tema da piada...", "German" to "Beschreibe die Situation oder das Thema...", "Japanese" to "ジョークの状況やトピックを話してください..."
+        ),
+        "export_all_jokes" to mapOf(
+            "English" to "Export Anthology", "Russian" to "Экспортировать сборник", "Spanish" to "Exportar antología",
+            "Chinese" to "导出故事文集", "Hindi" to "कहानियां निर्यात करें", "Arabic" to "تصدير المختارات",
+            "French" to "Exporter l'anthologie", "Portuguese" to "Exportar coletânea", "German" to "Sammlung exportieren", "Japanese" to "アンソロジーを出力"
+        ),
+        "exported_all_toast" to mapOf(
+            "English" to "Collection copied to clipboard!", "Russian" to "Сборник скопирован в буфер обмена!", "Spanish" to "¡Colección copiada al portapapeles!",
+            "Chinese" to "故事集已复制到剪贴板!", "Hindi" to "कहानियां क्लिपबोर्ड में कॉपी हो गईं!", "Arabic" to "تم نسخ المختارات إلى الحافظة!",
+            "French" to "Recueil copié dans le presse-papiers !", "Portuguese" to "Coletânea copiada para a área de transferência!", "German" to "Sammlung in Zwischenablage kopiert!", "Japanese" to "コレクションをクリップボードにコピーしました！"
+        ),
+        "spotlight_badge" to mapOf(
+            "English" to "✨ Campfire Wisdom of the Day", "Russian" to "✨ Мудрость у костра дня", "Spanish" to "✨ Sabiduría del día",
+            "Chinese" to "✨ 每日篝火智慧", "Hindi" to "✨ आज का ज्ञान", "Arabic" to "✨ حكمة اليوم عند المخيم",
+            "French" to "✨ Sagesse du jour au feu de camp", "Portuguese" to "✨ Sabedoria do dia na fogueira", "German" to "✨ Lagerfeuer-Weisheit des Tages", "Japanese" to "✨ 本日の知恵"
+        ),
+        "spotlight_subtitle" to mapOf(
+            "English" to "Authentic folklore heritage & humor", "Russian" to "Подлинный народный юмор и мудрость", "Spanish" to "Auténtico humor y sabiduría popular",
+            "Chinese" to "正宗民间幽默与智慧", "Hindi" to "प्रामाणिक लोक हास्य", "Arabic" to "تراث فلكلوري وفكاهة أصيلة",
+            "French" to "Humour et patrimoine populaire authentiques", "Portuguese" to "Humor e sabedoria folclórica autênticos", "German" to "Authentischer Volkshumor & Weisheit", "Japanese" to "本物の民俗ユーモア"
+        ),
+        "listen_elder_btn" to mapOf(
+            "English" to "Listen to Elder", "Russian" to "Слушать старца", "Spanish" to "Escuchar al anciano",
+            "Chinese" to "倾听长者叙述", "Hindi" to "बुजुर्ग की बात सुनें", "Arabic" to "استمع للحكيم",
+            "French" to "Écouter le sage", "Portuguese" to "Ouvir o sábio", "German" to "Dem Ältesten lauschen", "Japanese" to "長老の話を聞く"
+        ),
+        "next_spotlight_btn" to mapOf(
+            "English" to "Another Story", "Russian" to "Другой анекдот", "Spanish" to "Otra historia",
+            "Chinese" to "换一个故事", "Hindi" to "दूसरी कहानी", "Arabic" to "قصة أخرى",
+            "French" to "Autre histoire", "Portuguese" to "Outra história", "German" to "Andere Geschichte", "Japanese" to "別の話を見る"
+        ),
+        "quick_prompts_title" to mapOf(
+            "English" to "Popular Themes:", "Russian" to "Популярные сюжеты:", "Spanish" to "Temas populares:",
+            "Chinese" to "热门情节:", "Hindi" to "लोकप्रिय विषय:", "Arabic" to "موضوعات شائعة:",
+            "French" to "Thèmes populaires :", "Portuguese" to "Temas populares:", "German" to "Beliebte Themen:", "Japanese" to "人気のシチュエーション:"
+        ),
+        "play_all_top" to mapOf(
+            "English" to "Play All TOP", "Russian" to "Слушать весь ТОП", "Spanish" to "Reproducir todo",
+            "Chinese" to "连续收听全部", "Hindi" to "सभी सुनें", "Arabic" to "تشغيل الكل",
+            "French" to "Tout écouter", "Portuguese" to "Ouvir tudo", "German" to "Alles anhören", "Japanese" to "すべて連続再生"
+        ),
+        "play_trends_briefing" to mapOf(
+            "English" to "Listen to Briefing", "Russian" to "Слушать дайджест", "Spanish" to "Escuchar resumen",
+            "Chinese" to "收听摘要播报", "Hindi" to "संक्षिप्त विवरण सुनें", "Arabic" to "استمع للموجز",
+            "French" to "Écouter le briefing", "Portuguese" to "Ouvir boletim", "German" to "Briefing anhören", "Japanese" to "ブリーフィングを聴く"
+        ),
+        "trend_topics_title" to mapOf(
+            "English" to "AlphaSignalAI Topics:", "Russian" to "Рубрики AlphaSignalAI:", "Spanish" to "Temas AlphaSignalAI:",
+            "Chinese" to "AlphaSignalAI 专题:", "Hindi" to "AlphaSignalAI विषय:", "Arabic" to "موضوعات AlphaSignalAI:",
+            "French" to "Rubriques AlphaSignalAI :", "Portuguese" to "Tópicos AlphaSignalAI:", "German" to "AlphaSignalAI Rubriken:", "Japanese" to "AlphaSignalAI トピック:"
+        ),
+        "storyteller_tts_header" to mapOf(
+            "English" to "Storyteller Voice (TTS)", "Russian" to "Озвучка сказителя (TTS)", "Spanish" to "Voz del narrador (TTS)",
+            "Chinese" to "讲述者配音 (TTS)", "Hindi" to "कथावाचक आवाज़ (TTS)", "Arabic" to "صوت الراوي (TTS)",
+            "French" to "Voix du conteur (TTS)", "Portuguese" to "Voz do contador (TTS)", "German" to "Stimme des Erzählers (TTS)", "Japanese" to "語り部の音声 (TTS)"
+        ),
+        "filter_all_cultures" to mapOf(
+            "English" to "All Cultures", "Russian" to "Все культуры", "Spanish" to "Todas las culturas",
+            "Chinese" to "所有文化", "Hindi" to "सभी संस्कृतियां", "Arabic" to "جميع الثقافات",
+            "French" to "Toutes les cultures", "Portuguese" to "Todas as culturas", "German" to "Alle Kulturen", "Japanese" to "すべての文化"
         )
     )
 
@@ -1392,5 +1534,55 @@ object Loc {
             )
         )
         return list[lang] ?: list["English"] ?: emptyList()
+    }
+
+    fun getQuickSituations(lang: String): List<String> {
+        val isRussian = lang == "Russian" || lang == "Русский"
+        return if (isRussian) {
+            listOf(
+                "У тёщи на блинах",
+                "Торг на базаре",
+                "В бане с друзьями",
+                "На приёме у врача",
+                "ИИ против мудреца",
+                "Сдача экзамена",
+                "В городском такси",
+                "Случай на рыбалке"
+            )
+        } else {
+            listOf(
+                "Visiting In-laws",
+                "Bargaining at Bazaar",
+                "Bathhouse with Friends",
+                "At the Doctor",
+                "AI vs Wise Elder",
+                "College Exam",
+                "In a City Taxi",
+                "Fishing Adventure"
+            )
+        }
+    }
+
+    fun getTrendTopics(lang: String): List<Pair<String, String?>> {
+        val isRussian = lang == "Russian" || lang == "Русский"
+        return if (isRussian) {
+            listOf(
+                "🔥 Все тренды" to null,
+                "🤖 ИИ & Нейросети" to "AI Artificial Intelligence LLM",
+                "🚀 Космос & Наука" to "Space science exploration",
+                "⚡ Кванты & Чипы" to "Quantum computing hardware chips",
+                "💻 Код & Архитектура" to "Software engineering programming algorithms",
+                "🔬 Биотехнологии" to "Biotechnology medicine breakthrough"
+            )
+        } else {
+            listOf(
+                "🔥 All Trends" to null,
+                "🤖 AI & Neural Nets" to "AI Artificial Intelligence LLM",
+                "🚀 Space & Science" to "Space science exploration",
+                "⚡ Quantum & Chips" to "Quantum computing hardware chips",
+                "💻 Code & Architecture" to "Software engineering programming algorithms",
+                "🔬 Biotechnology" to "Biotechnology medicine breakthrough"
+            )
+        }
     }
 }

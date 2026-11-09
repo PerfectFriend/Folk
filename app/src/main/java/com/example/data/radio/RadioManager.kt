@@ -1,5 +1,6 @@
 package com.example.data.radio
 
+import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.util.Log
@@ -41,6 +42,12 @@ class RadioManager private constructor() {
 
     private val _isLiveEdge = MutableStateFlow(true)
     val isLiveEdge: StateFlow<Boolean> = _isLiveEdge.asStateFlow()
+
+    // --- SLEEP TIMER ---
+    private val _sleepTimerRemainingSeconds = MutableStateFlow(0)
+    val sleepTimerRemainingSeconds: StateFlow<Int> = _sleepTimerRemainingSeconds.asStateFlow()
+    private var sleepTimerJob: kotlinx.coroutines.Job? = null
+    var onSleepTimerExpired: (() -> Unit)? = null
 
     private val coroutineScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
     private var progressJob: kotlinx.coroutines.Job? = null
@@ -89,6 +96,64 @@ class RadioManager private constructor() {
     private fun stopProgressTracking() {
         progressJob?.cancel()
         progressJob = null
+    }
+
+    // --- Service Bridge Callbacks ---
+    fun notifyLoading(url: String) {
+        _currentStreamUrl.value = url
+        _isLoading.value = true
+        _isPlaying.value = false
+        _error.value = null
+        _currentPositionMs.value = 0L
+        _isLiveEdge.value = true
+    }
+
+    fun notifyPlaying(playing: Boolean) {
+        _isPlaying.value = playing
+        _isLoading.value = false
+        if (playing) {
+            startProgressTracking()
+        } else {
+            stopProgressTracking()
+        }
+    }
+
+    fun notifyError(errorMessage: String) {
+        _error.value = errorMessage
+        _isLoading.value = false
+        _isPlaying.value = false
+        stopProgressTracking()
+    }
+
+    fun playStreamWithService(context: Context, url: String, stationName: String) {
+        RadioPlayerService.play(context, url, stationName)
+    }
+
+    fun pauseStreamWithService(context: Context) {
+        RadioPlayerService.pause(context)
+    }
+
+    fun resumeStreamWithService(context: Context) {
+        RadioPlayerService.resume(context)
+    }
+
+    fun togglePlayPauseWithService(context: Context) {
+        RadioPlayerService.toggle(context)
+    }
+
+    fun stopStreamWithService(context: Context) {
+        RadioPlayerService.stop(context)
+        stopStream()
+    }
+
+    fun setVolumeWithService(context: Context, vol: Float) {
+        setVolume(vol)
+        RadioPlayerService.setVolume(context, vol)
+    }
+
+    fun toggleMuteWithService(context: Context) {
+        toggleMute()
+        RadioPlayerService.setVolume(context, _volume.value)
     }
 
     fun playStream(url: String) {
@@ -206,9 +271,14 @@ class RadioManager private constructor() {
         _isLiveEdge.value = true
     }
 
+    private var lastNonZeroVolume: Float = 1.0f
+
     fun setVolume(vol: Float) {
         val clamped = vol.coerceIn(0.0f, 1.0f)
         _volume.value = clamped
+        if (clamped > 0.05f) {
+            lastNonZeroVolume = clamped
+        }
         mediaPlayer?.let { player ->
             try {
                 player.setVolume(clamped, clamped)
@@ -216,6 +286,57 @@ class RadioManager private constructor() {
                 Log.e("RadioManager", "Error adjusting volume", e)
             }
         }
+    }
+
+    fun toggleMute() {
+        if (_volume.value > 0.01f) {
+            lastNonZeroVolume = _volume.value
+            setVolume(0.0f)
+        } else {
+            setVolume(if (lastNonZeroVolume > 0.05f) lastNonZeroVolume else 1.0f)
+        }
+    }
+
+
+    // --- Sleep Timer Controls ---
+    fun setSleepTimerMinutes(minutes: Int) {
+        sleepTimerJob?.cancel()
+        if (minutes <= 0) {
+            cancelSleepTimer()
+            return
+        }
+
+        _sleepTimerRemainingSeconds.value = minutes * 60
+        sleepTimerJob = coroutineScope.launch {
+            val baseVol = _volume.value
+            while (isActive && _sleepTimerRemainingSeconds.value > 0) {
+                delay(1000)
+                val remaining = _sleepTimerRemainingSeconds.value - 1
+                _sleepTimerRemainingSeconds.value = remaining
+
+                // Smooth fade-out in final 12 seconds
+                if (remaining in 1..12) {
+                    val fadeVol = (baseVol * (remaining / 12f)).coerceIn(0.0f, baseVol)
+                    mediaPlayer?.let { p ->
+                        try { p.setVolume(fadeVol, fadeVol) } catch (e: Exception) {}
+                    }
+                }
+            }
+
+            if (_sleepTimerRemainingSeconds.value <= 0) {
+                pauseStream()
+                // Restore volume
+                setVolume(baseVol)
+                onSleepTimerExpired?.invoke()
+            }
+        }
+    }
+
+    fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
+        _sleepTimerRemainingSeconds.value = 0
+        setVolume(_volume.value)
     }
 
     fun stopStream() {

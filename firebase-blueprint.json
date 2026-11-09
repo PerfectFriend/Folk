@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile and cultural preferences for the Folk Anecdotes app",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string", "description": "User's display name" },
+        "email": { "type": "string", "format": "email", "description": "User's email" },
+        "selectedCulture": { "type": "string", "description": "Active folklore storytelling culture" },
+        "selectedLanguage": { "type": "string", "description": "Selected interface and narrative language" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Profile creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Profile update timestamp" }
+      },
+      "required": ["selectedCulture", "selectedLanguage"]
+    },
+    "SavedFolkJoke": {
+      "title": "SavedFolkJoke",
+      "description": "User-saved folk jokes and cheerful akyn anecdotes",
+      "type": "object",
+      "properties": {
+        "jokeText": { "type": "string", "description": "Full joke or anecdote text" },
+        "culture": { "type": "string", "description": "Folklore culture style" },
+        "authorName": { "type": "string", "description": "Source or storyteller name" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["jokeText", "culture"]
+    },
+    "AkynChatMessage": {
+      "title": "AkynChatMessage",
+      "description": "Conversation messages with the cheerful Akyn storyteller",
+      "type": "object",
+      "properties": {
+        "sender": { "type": "string", "enum": ["user", "akyn"], "description": "Message sender" },
+        "text": { "type": "string", "description": "Message text" },
+        "culture": { "type": "string", "description": "Active culture style" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp" }
+      },
+      "required": ["sender", "text", "culture"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Authenticated user profile and preferences"
+    },
+    "/users/{userId}/saved_jokes/{jokeId}": {
+      "schema": "SavedFolkJoke",
+      "description": "User's saved folk jokes and anecdotes"
+    },
+    "/users/{userId}/chat_history/{messageId}": {
+      "schema": "AkynChatMessage",
+      "description": "History of conversations with the Akyn storyteller"
+    }
+  }
+}
